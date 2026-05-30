@@ -5,6 +5,16 @@
 
 ---
 
+## 2026.05.30 — Модуль 1.2: JSON
+
+**JSON — стандарт передачі даних між API і автоматизаціями.**
+
+- Ключові практики: JSON.parse/stringify (JS), json.loads/dumps (Python)
+- Шляхи до даних: dot notation, bracket notation, індексація масивів з 0
+- Реальні приклади розібрано: Stripe webhook, Claude API, Google Calendar, GitHub push
+- Виявлено: content у Claude API — масив, тому response.content[0].text, не response.content.text
+
+---
 ## 2026.05.30 — Організація процесів
 
 **Впровадження гібридного Human-in-the-Loop (HITL) процесу для збереження бази знань.**

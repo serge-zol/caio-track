@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.2 - Формат JSON: структура даних та парсинг</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #0f1218;
+    --bg3: #141820;
+    --bg4: #1a2030;
+    --border: #1e2535;
+    --border2: #252d40;
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --accent3: #93c5fd;
+    --green: #10b981;
+    --green2: #34d399;
+    --yellow: #f59e0b;
+    --yellow2: #fbbf24;
+    --red: #ef4444;
+    --red2: #f87171;
+    --purple: #8b5cf6;
+    --purple2: #a78bfa;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Sora', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .step-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.3);
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .header-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .progress-bar {
+    width: 120px;
+    height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-pct {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    min-width: 32px;
+    text-align: right;
+  }
+
+  /* TABS */
+  .tabs-wrapper {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs-wrapper-inner {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    gap: 0;
+  }
+
+  .tabs-wrapper::-webkit-scrollbar { display: none; }
+
+  .tab {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text3);
+    padding: 14px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tab:hover { color: var(--text2); }
+
+  .tab.active {
+    color: var(--accent2);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab .tab-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: inherit;
+    opacity: 0.6;
+  }
+
+  /* MODULE HERO */
+  .module-hero {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 24px 20px;
+  }
+
+  .module-hero-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .module-track {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+  }
+
+  .module-hero h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+
+  .module-hero-sub {
+    font-size: 13px;
+    color: var(--text3);
+  }
+
+  /* FOOTER */
+  .footer {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    margin-top: 60px;
+  }
+
+  .footer-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .footer-left {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .footer-left span { color: var(--text2); }
+
+  .footer-right {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .footer-right a {
+    color: var(--accent2);
+    text-decoration: none;
+  }
+
+  .footer-right a:hover { text-decoration: underline; }
+
+  /* MAIN */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 40px;
+  }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* SECTION */
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* THEORY CARD */
+  .theory-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .theory-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  .theory-card p {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+
+  .theory-card p:last-child { margin-bottom: 0; }
+
+  /* HIGHLIGHT BOX */
+  .highlight {
+    background: rgba(59,130,246,0.06);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 14px 16px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  .highlight strong { color: var(--accent2); font-weight: 600; }
+
+  .highlight-green {
+    background: rgba(16,185,129,0.06);
+    border-color: rgba(16,185,129,0.2);
+    border-left-color: var(--green);
+  }
+  .highlight-green strong { color: var(--green2); }
+
+  .highlight-yellow {
+    background: rgba(245,158,11,0.06);
+    border-color: rgba(245,158,11,0.2);
+    border-left-color: var(--yellow);
+  }
+  .highlight-yellow strong { color: var(--yellow2); }
+
+  .highlight-red {
+    background: rgba(239,68,68,0.06);
+    border-color: rgba(239,68,68,0.2);
+    border-left-color: var(--red);
+  }
+  .highlight-red strong { color: var(--red2); }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: #080a0e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 16px 0;
+    overflow: hidden;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-lang {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    background: none;
+    border: 1px solid var(--border2);
+    padding: 3px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover {
+    color: var(--accent2);
+    border-color: var(--accent);
+  }
+
+  .copy-btn.copied {
+    color: var(--green2);
+    border-color: var(--green);
+  }
+
+  pre {
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    tab-size: 2;
+  }
+
+  /* Syntax highlighting */
+  .json-key { color: #60a5fa; }
+  .json-str { color: #34d399; }
+  .json-num { color: #f59e0b; }
+  .json-bool { color: #a78bfa; }
+  .json-null { color: #f87171; }
+  .json-bracket { color: #94a3b8; }
+  .json-colon { color: #64748b; }
+  .json-comma { color: #64748b; }
+  .code-comment { color: #4a5568; font-style: italic; }
+
+  .js-kw { color: #a78bfa; }
+  .js-fn { color: #60a5fa; }
+  .js-str { color: #34d399; }
+  .js-num { color: #f59e0b; }
+  .js-var { color: #e2e8f0; }
+  .js-prop { color: #93c5fd; }
+  .js-method { color: #34d399; }
+  .js-op { color: #94a3b8; }
+
+  /* ANATOMY DIAGRAM */
+  .anatomy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .anatomy-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .anatomy-item h4 {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .anatomy-item p {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .type-string h4 { color: var(--green2); }
+  .type-number h4 { color: var(--yellow2); }
+  .type-bool h4 { color: var(--purple2); }
+  .type-null h4 { color: var(--red2); }
+  .type-array h4 { color: var(--accent2); }
+  .type-object h4 { color: #f472b6; }
+
+  .type-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: var(--mono);
+  }
+
+  /* COMPARISON TABLE */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  .compare-table th {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 10px 14px;
+    text-align: left;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border2);
+    color: var(--text3);
+  }
+
+  .compare-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .badge-green { background: rgba(16,185,129,0.1); color: var(--green2); border: 1px solid rgba(16,185,129,0.2); }
+  .badge-yellow { background: rgba(245,158,11,0.1); color: var(--yellow2); border: 1px solid rgba(245,158,11,0.2); }
+  .badge-red { background: rgba(239,68,68,0.1); color: var(--red2); border: 1px solid rgba(239,68,68,0.2); }
+  .badge-blue { background: rgba(59,130,246,0.1); color: var(--accent2); border: 1px solid rgba(59,130,246,0.2); }
+  .badge-purple { background: rgba(139,92,246,0.1); color: var(--purple2); border: 1px solid rgba(139,92,246,0.2); }
+
+  /* FLOW VISUAL */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+    flex-wrap: wrap;
+  }
+
+  .flow-box {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .flow-arrow {
+    color: var(--text3);
+    font-size: 16px;
+  }
+
+  /* INTERACTIVE PARSER */
+  .parser-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .parser-pane {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .pane-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pane-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .pane-status {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+
+  .pane-status.valid { background: rgba(16,185,129,0.1); color: var(--green2); }
+  .pane-status.invalid { background: rgba(239,68,68,0.1); color: var(--red2); }
+
+  textarea.json-input {
+    width: 100%;
+    min-height: 200px;
+    background: #080a0e;
+    border: none;
+    outline: none;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.6;
+    resize: vertical;
+  }
+
+  .output-area {
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    min-height: 200px;
+    background: #080a0e;
+    overflow-y: auto;
+    max-height: 400px;
+    line-height: 1.6;
+  }
+
+  .parse-controls {
+    padding: 12px 14px;
+    background: var(--bg4);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--accent2); color: var(--bg); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text3);
+    border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { color: var(--text2); border-color: var(--border2); background: var(--bg3); }
+
+  .btn-green {
+    background: rgba(16,185,129,0.1);
+    color: var(--green2);
+    border: 1px solid rgba(16,185,129,0.2);
+  }
+  .btn-green:hover { background: rgba(16,185,129,0.2); }
+
+  /* PATH EXTRACTOR */
+  .path-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px;
+    background: var(--bg4);
+    border-top: 1px solid var(--border);
+  }
+
+  .path-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 7px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+  }
+
+  .path-input:focus { border-color: var(--accent); }
+
+  .path-result {
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--green2);
+    background: rgba(16,185,129,0.04);
+    border-top: 1px solid var(--border);
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* TREE VIEW */
+  .tree-node { padding: 2px 0; }
+  .tree-key { color: var(--accent2); }
+  .tree-val-str { color: var(--green2); }
+  .tree-val-num { color: var(--yellow2); }
+  .tree-val-bool { color: var(--purple2); }
+  .tree-val-null { color: var(--red2); }
+  .tree-val-obj { color: var(--text3); }
+  .tree-expand { color: var(--text3); cursor: pointer; user-select: none; }
+  .tree-expand:hover { color: var(--accent2); }
+  .tree-children { margin-left: 20px; border-left: 1px solid var(--border2); padding-left: 12px; }
+  .tree-children.collapsed { display: none; }
+
+  /* QUIZ */
+  .quiz-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .quiz-q {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .quiz-q span.q-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    margin-right: 8px;
+  }
+
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .quiz-opt {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text2);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+  }
+
+  .quiz-opt:hover:not(.answered) {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(59,130,246,0.05);
+  }
+
+  .quiz-opt.correct {
+    border-color: var(--green);
+    background: rgba(16,185,129,0.08);
+    color: var(--green2);
+  }
+
+  .quiz-opt.wrong {
+    border-color: var(--red);
+    background: rgba(239,68,68,0.08);
+    color: var(--red2);
+  }
+
+  .opt-letter {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: var(--bg4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+  }
+
+  .quiz-opt.correct .opt-letter { background: rgba(16,185,129,0.2); color: var(--green2); }
+  .quiz-opt.wrong .opt-letter { background: rgba(239,68,68,0.2); color: var(--red2); }
+
+  .quiz-feedback {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    display: none;
+  }
+
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: var(--green2); }
+  .quiz-feedback.fail { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: var(--red2); }
+
+  .quiz-score-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  .score-display {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent2);
+  }
+
+  .score-label {
+    font-size: 13px;
+    color: var(--text3);
+  }
+
+  /* CHEATSHEET */
+  .cheat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .cheat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .cheat-card h4 {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  .cheat-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .cheat-code {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    white-space: nowrap;
+    min-width: 100px;
+  }
+
+  .cheat-desc {
+    font-size: 12px;
+    color: var(--text3);
+    line-height: 1.4;
+  }
+
+  /* REAL-WORLD EXAMPLES */
+  .example-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .ex-tab {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    padding: 9px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  .ex-tab:hover { color: var(--text2); }
+  .ex-tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+
+  .ex-panel { display: none; }
+  .ex-panel.active { display: block; }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    .anatomy-grid { grid-template-columns: 1fr; }
+    .parser-layout { grid-template-columns: 1fr; }
+    .cheat-grid { grid-template-columns: 1fr; }
+    .header-title { display: none; }
+    .progress-container { gap: 6px; }
+    .progress-bar { width: 80px; }
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* ANIMATIONS */
+  .panel.active { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: var(--green2); }
+  .dot-blue { background: var(--accent2); }
+  .dot-yellow { background: var(--yellow2); }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+  <div class="header-left">
+    <span class="step-badge">КРОК 1.2</span>
+    <span class="header-title">Формат JSON: структура даних та парсинг</span>
+  </div>
+  <div class="progress-container">
+    <span class="progress-label">прогрес</span>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <span class="progress-pct" id="progressPct">0%</span>
+  </div>
+  </div>
+</header>
+
+<nav class="tabs-wrapper">
+  <div class="tabs-wrapper-inner">
+  <button class="tab active" onclick="switchTab('theory', this)">
+    <span class="tab-num">01</span> Теорія
+  </button>
+  <button class="tab" onclick="switchTab('types', this)">
+    <span class="tab-num">02</span> Типи даних
+  </button>
+  <button class="tab" onclick="switchTab('practice', this)">
+    <span class="tab-num">03</span> Практика
+  </button>
+  <button class="tab" onclick="switchTab('real', this)">
+    <span class="tab-num">04</span> Реальні приклади
+  </button>
+  <button class="tab" onclick="switchTab('quiz', this)">
+    <span class="tab-num">05</span> Тест
+  </button>
+  </div>
+</nav>
+
+<div class="module-hero">
+  <div class="module-hero-inner">
+    <div class="module-track">CAIO Track · Етап 1: Фундамент</div>
+    <h1>1.2 — Формат JSON: структура даних та парсинг</h1>
+    <div class="module-hero-sub">Типи даних · Синтаксис · Доступ до полів · Реальні приклади з API</div>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- ===== TAB 1: THEORY ===== -->
+  <div class="panel active" id="tab-theory">
+
+    <p class="section-title">що таке JSON</p>
+
+    <div class="theory-card">
+      <h2>JSON — мова між програмами</h2>
+      <p>Якщо API — це «дверний дзвінок» між сервісами, то JSON — це «мова», якою вони спілкуються. Більшість сучасних API передають дані саме в форматі JSON.</p>
+      <div class="highlight">
+        <strong>JSON</strong> (JavaScript Object Notation) — текстовий формат запису структурованих даних. Читається людиною і парситься будь-якою мовою програмування. Версія 2001 року, RFC 8259 (2017).
+      </div>
+      <p>Ти вже бачив JSON — це те, що повертає API у відповідь на запит. Webhook-повідомлення від Stripe, відповідь Claude API, дані від Google Calendar — все це JSON.</p>
+    </div>
+
+    <p class="section-title">анатомія JSON</p>
+
+    <div class="theory-card">
+      <p>JSON будується з двох базових конструкцій:</p>
+      <div class="anatomy-grid">
+        <div class="anatomy-item" style="border-color: rgba(59,130,246,0.3);">
+          <h4 style="color: var(--accent2);">{ } Об'єкт (Object)</h4>
+          <p>Набір пар <strong style="color:var(--accent2)">ключ: значення</strong>. Ключі — завжди рядки в лапках. Порядок не гарантований.</p>
+        </div>
+        <div class="anatomy-item" style="border-color: rgba(16,185,129,0.3);">
+          <h4 style="color: var(--green2);">[ ] Масив (Array)</h4>
+          <p>Впорядкований список значень. Нумеруються з <strong style="color:var(--green2)">0</strong>. Можуть містити будь-які типи.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JSON — базова структура</span>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre><span class="json-bracket">{</span>
+  <span class="json-key">"name"</span><span class="json-colon">:</span> <span class="json-str">"Сергій"</span><span class="json-comma">,</span>
+  <span class="json-key">"age"</span><span class="json-colon">:</span> <span class="json-num">32</span><span class="json-comma">,</span>
+  <span class="json-key">"active"</span><span class="json-colon">:</span> <span class="json-bool">true</span><span class="json-comma">,</span>
+  <span class="json-key">"score"</span><span class="json-colon">:</span> <span class="json-null">null</span><span class="json-comma">,</span>
+  <span class="json-key">"skills"</span><span class="json-colon">:</span> <span class="json-bracket">[</span><span class="json-str">"API"</span><span class="json-comma">,</span> <span class="json-str">"JSON"</span><span class="json-comma">,</span> <span class="json-str">"Make"</span><span class="json-bracket">]</span><span class="json-comma">,</span>
+  <span class="json-key">"address"</span><span class="json-colon">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"city"</span><span class="json-colon">:</span> <span class="json-str">"Київ"</span><span class="json-comma">,</span>
+    <span class="json-key">"country"</span><span class="json-colon">:</span> <span class="json-str">"UA"</span>
+  <span class="json-bracket">}</span>
+<span class="json-bracket">}</span></pre>
+      </div>
+
+      <div class="highlight highlight-yellow">
+        <strong>Ключове правило:</strong> JSON — це завжди текст (string). Коли API «повертає JSON» — він повертає рядок. Програма потім «парсить» цей рядок у нативний об'єкт своєї мови.
+      </div>
+    </div>
+
+    <p class="section-title">JSON vs XML vs YAML</p>
+
+    <div class="theory-card">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Формат</th>
+            <th>Де використовується</th>
+            <th>Читабельність</th>
+            <th>Вага</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong style="color:var(--accent2)">JSON</strong></td>
+            <td>REST API, webhooks, конфіги</td>
+            <td><span class="badge badge-green">Висока</span></td>
+            <td><span class="badge badge-green">Легкий</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:var(--text2)">XML</strong></td>
+            <td>SOAP API, старі системи</td>
+            <td><span class="badge badge-yellow">Середня</span></td>
+            <td><span class="badge badge-red">Важкий</span></td>
+          </tr>
+          <tr>
+            <td><strong style="color:var(--green2)">YAML</strong></td>
+            <td>Docker, CI/CD, конфіги</td>
+            <td><span class="badge badge-green">Дуже висока</span></td>
+            <td><span class="badge badge-green">Легкий</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="highlight highlight-green">
+        <strong>Для автоматизацій</strong> (Make.com, n8n, Zapier) JSON — стандарт де-факто. 95%+ сучасних API використовують саме його.
+      </div>
+    </div>
+
+    <p class="section-title">правила синтаксису</p>
+
+    <div class="theory-card">
+      <div class="pill-row">
+        <span class="pill" style="color:var(--green2);border-color:rgba(16,185,129,0.3)">✓ Ключі в подвійних лапках</span>
+        <span class="pill" style="color:var(--green2);border-color:rgba(16,185,129,0.3)">✓ Рядки в подвійних лапках</span>
+        <span class="pill" style="color:var(--green2);border-color:rgba(16,185,129,0.3)">✓ Крапка з комою між парами</span>
+        <span class="pill" style="color:var(--red2);border-color:rgba(239,68,68,0.3)">✗ Без коментарів</span>
+        <span class="pill" style="color:var(--red2);border-color:rgba(239,68,68,0.3)">✗ Без trailing comma</span>
+        <span class="pill" style="color:var(--red2);border-color:rgba(239,68,68,0.3)">✗ Без одинарних лапок</span>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">Типові помилки</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+        <pre><span class="code-comment">// ❌ НЕПРАВИЛЬНО</span>
+<span class="json-bracket">{</span>
+  <span class="json-str">'name'</span>: <span class="json-str">"Сергій"</span><span class="json-comma">,</span>      <span class="code-comment">// одинарні лапки для ключа</span>
+  <span class="json-key">"age"</span>: <span class="json-num">32</span><span class="json-comma">,</span>
+  <span class="json-key">"city"</span>: <span class="json-str">"Київ"</span><span class="json-comma">,</span>         <span class="code-comment">// trailing comma</span>
+<span class="json-bracket">}</span>
+
+<span class="code-comment">// ✅ ПРАВИЛЬНО</span>
+<span class="json-bracket">{</span>
+  <span class="json-key">"name"</span>: <span class="json-str">"Сергій"</span><span class="json-comma">,</span>
+  <span class="json-key">"age"</span>: <span class="json-num">32</span><span class="json-comma">,</span>
+  <span class="json-key">"city"</span>: <span class="json-str">"Київ"</span>
+<span class="json-bracket">}</span></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== TAB 2: TYPES ===== -->
+  <div class="panel" id="tab-types">
+
+    <p class="section-title">6 типів даних JSON</p>
+
+    <div class="anatomy-grid" style="grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
+      <div class="anatomy-item type-string">
+        <h4>STRING <span class="type-tag" style="background:rgba(16,185,129,0.1);color:var(--green2)">"..."</span></h4>
+        <p>Текст у подвійних лапках. Підтримує Unicode, escape-символи.</p>
+      </div>
+      <div class="anatomy-item type-number">
+        <h4>NUMBER <span class="type-tag" style="background:rgba(245,158,11,0.1);color:var(--yellow2)">42</span></h4>
+        <p>Ціле або з плаваючою крапкою. Без лапок. Науковий запис ок.</p>
+      </div>
+      <div class="anatomy-item type-bool">
+        <h4>BOOLEAN <span class="type-tag" style="background:rgba(139,92,246,0.1);color:var(--purple2)">true</span></h4>
+        <p>Тільки <code>true</code> або <code>false</code>. Завжди в нижньому регістрі.</p>
+      </div>
+      <div class="anatomy-item type-null">
+        <h4>NULL <span class="type-tag" style="background:rgba(239,68,68,0.1);color:var(--red2)">null</span></h4>
+        <p>Відсутність значення. Аналог <code>None</code>, <code>nil</code>, <code>undefined</code>.</p>
+      </div>
+      <div class="anatomy-item type-array">
+        <h4>ARRAY <span class="type-tag" style="background:rgba(59,130,246,0.1);color:var(--accent2)">[...]</span></h4>
+        <p>Впорядкований список. Індекси з 0. Будь-які типи всередині.</p>
+      </div>
+      <div class="anatomy-item type-object">
+        <h4>OBJECT <span class="type-tag" style="background:rgba(244,114,182,0.1);color:#f472b6">{...}</span></h4>
+        <p>Пари ключ-значення. Ключ — тільки рядок. Вкладеність необмежена.</p>
+      </div>
+    </div>
+
+    <p class="section-title">приклади всіх типів</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">JSON — всі 6 типів</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="json-bracket">{</span>
+  <span class="code-comment">// STRING — текст</span>
+  <span class="json-key">"username"</span><span class="json-colon">:</span> <span class="json-str">"serge_zol"</span><span class="json-comma">,</span>
+  <span class="json-key">"emoji"</span><span class="json-colon">:</span> <span class="json-str">"🚀"</span><span class="json-comma">,</span>
+  <span class="json-key">"path"</span><span class="json-colon">:</span> <span class="json-str">"C:\\Users\\file.txt"</span><span class="json-comma">,</span>   <span class="code-comment">// escape</span>
+
+  <span class="code-comment">// NUMBER — числа</span>
+  <span class="json-key">"age"</span><span class="json-colon">:</span> <span class="json-num">32</span><span class="json-comma">,</span>
+  <span class="json-key">"price"</span><span class="json-colon">:</span> <span class="json-num">149.99</span><span class="json-comma">,</span>
+  <span class="json-key">"big"</span><span class="json-colon">:</span> <span class="json-num">1.5e10</span><span class="json-comma">,</span>
+
+  <span class="code-comment">// BOOLEAN</span>
+  <span class="json-key">"verified"</span><span class="json-colon">:</span> <span class="json-bool">true</span><span class="json-comma">,</span>
+  <span class="json-key">"deleted"</span><span class="json-colon">:</span> <span class="json-bool">false</span><span class="json-comma">,</span>
+
+  <span class="code-comment">// NULL</span>
+  <span class="json-key">"avatar"</span><span class="json-colon">:</span> <span class="json-null">null</span><span class="json-comma">,</span>
+
+  <span class="code-comment">// ARRAY</span>
+  <span class="json-key">"tags"</span><span class="json-colon">:</span> <span class="json-bracket">[</span><span class="json-str">"AI"</span><span class="json-comma">,</span> <span class="json-str">"automation"</span><span class="json-comma">,</span> <span class="json-str">"CAIO"</span><span class="json-bracket">]</span><span class="json-comma">,</span>
+  <span class="json-key">"scores"</span><span class="json-colon">:</span> <span class="json-bracket">[</span><span class="json-num">95</span><span class="json-comma">,</span> <span class="json-num">87</span><span class="json-comma">,</span> <span class="json-num">92</span><span class="json-bracket">]</span><span class="json-comma">,</span>
+
+  <span class="code-comment">// OBJECT (вкладений)</span>
+  <span class="json-key">"location"</span><span class="json-colon">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"lat"</span><span class="json-colon">:</span> <span class="json-num">50.45</span><span class="json-comma">,</span>
+    <span class="json-key">"lon"</span><span class="json-colon">:</span> <span class="json-num">30.52</span>
+  <span class="json-bracket">}</span>
+<span class="json-bracket">}</span></pre>
+    </div>
+
+    <p class="section-title">доступ до значень (JavaScript)</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">JavaScript — доступ до даних</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="js-kw">const</span> <span class="js-var">data</span> <span class="js-op">=</span> <span class="js-fn">JSON.parse</span><span class="json-bracket">(</span><span class="js-var">jsonString</span><span class="json-bracket">)</span><span class="json-comma">;</span>
+
+<span class="code-comment">// Dot notation</span>
+<span class="js-var">data</span>.<span class="js-prop">username</span>           <span class="code-comment">// "serge_zol"</span>
+<span class="js-var">data</span>.<span class="js-prop">location</span>.<span class="js-prop">lat</span>     <span class="code-comment">// 50.45</span>
+
+<span class="code-comment">// Bracket notation (для динамічних ключів)</span>
+<span class="js-var">data</span><span class="json-bracket">[</span><span class="js-str">"age"</span><span class="json-bracket">]</span>             <span class="code-comment">// 32</span>
+
+<span class="code-comment">// Масиви — індекс з 0</span>
+<span class="js-var">data</span>.<span class="js-prop">tags</span><span class="json-bracket">[</span><span class="json-num">0</span><span class="json-bracket">]</span>          <span class="code-comment">// "AI"</span>
+<span class="js-var">data</span>.<span class="js-prop">tags</span><span class="json-bracket">[</span><span class="json-num">2</span><span class="json-bracket">]</span>          <span class="code-comment">// "CAIO"</span>
+<span class="js-var">data</span>.<span class="js-prop">tags</span>.<span class="js-prop">length</span>       <span class="code-comment">// 3</span>
+
+<span class="code-comment">// Серіалізація назад у рядок</span>
+<span class="js-fn">JSON.stringify</span><span class="json-bracket">(</span><span class="js-var">data</span><span class="json-comma">,</span> <span class="js-null">null</span><span class="json-comma">,</span> <span class="json-num">2</span><span class="json-bracket">)</span>  <span class="code-comment">// відступ 2 пробіли</span></pre>
+    </div>
+
+    <p class="section-title">доступ у Python</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">Python — json module</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="js-kw">import</span> <span class="js-var">json</span>
+
+<span class="code-comment"># Парсинг рядка → dict</span>
+<span class="js-var">data</span> <span class="js-op">=</span> <span class="js-var">json</span>.<span class="js-method">loads</span><span class="json-bracket">(</span><span class="js-var">json_string</span><span class="json-bracket">)</span>
+
+<span class="code-comment"># Доступ</span>
+<span class="js-var">data</span><span class="json-bracket">[</span><span class="js-str">"username"</span><span class="json-bracket">]</span>           <span class="code-comment"># "serge_zol"</span>
+<span class="js-var">data</span><span class="json-bracket">[</span><span class="js-str">"location"</span><span class="json-bracket">]</span><span class="json-bracket">[</span><span class="js-str">"lat"</span><span class="json-bracket">]</span>  <span class="code-comment"># 50.45</span>
+<span class="js-var">data</span><span class="json-bracket">[</span><span class="js-str">"tags"</span><span class="json-bracket">][</span><span class="json-num">0</span><span class="json-bracket">]</span>            <span class="code-comment"># "AI"</span>
+
+<span class="code-comment"># Безпечний доступ</span>
+<span class="js-var">data</span>.<span class="js-method">get</span><span class="json-bracket">(</span><span class="js-str">"missing"</span><span class="json-comma">,</span> <span class="js-str">"default"</span><span class="json-bracket">)</span>  <span class="code-comment"># "default"</span>
+
+<span class="code-comment"># Серіалізація dict → рядок</span>
+<span class="js-var">json</span>.<span class="js-method">dumps</span><span class="json-bracket">(</span><span class="js-var">data</span><span class="json-comma">,</span> <span class="js-var">indent</span><span class="js-op">=</span><span class="json-num">2</span><span class="json-comma">,</span> <span class="js-var">ensure_ascii</span><span class="js-op">=</span><span class="json-bool">False</span><span class="json-bracket">)</span></pre>
+    </div>
+
+  </div>
+
+  <!-- ===== TAB 3: PRACTICE ===== -->
+  <div class="panel" id="tab-practice">
+
+    <p class="section-title">інтерактивний JSON парсер</p>
+
+    <div class="parser-layout">
+      <div class="parser-pane">
+        <div class="pane-header">
+          <span class="pane-title">JSON Input</span>
+          <span class="pane-status" id="parseStatus">—</span>
+        </div>
+        <textarea class="json-input" id="jsonInput" spellcheck="false" placeholder='Введи JSON тут...
+{
+  "key": "value"
+}'></textarea>
+        <div class="parse-controls">
+          <button class="btn btn-primary" onclick="parseJSON()">▶ Парсити</button>
+          <button class="btn btn-ghost" onclick="formatJSON()">⟳ Форматувати</button>
+          <button class="btn btn-ghost" onclick="loadExample('basic')">Приклад 1</button>
+          <button class="btn btn-ghost" onclick="loadExample('webhook')">Webhook</button>
+          <button class="btn btn-ghost" onclick="loadExample('api')">API відповідь</button>
+        </div>
+      </div>
+
+      <div class="parser-pane">
+        <div class="pane-header">
+          <span class="pane-title">Дерево / Результат</span>
+          <button class="btn btn-ghost" onclick="toggleView()" style="font-size:11px;padding:3px 8px;">переключити вигляд</button>
+        </div>
+        <div class="output-area" id="treeOutput">
+          <span style="color:var(--text3);font-size:12px">Результат з'явиться тут...</span>
+        </div>
+        <div class="path-input-row">
+          <input type="text" class="path-input" id="pathInput" placeholder='data.user.name або data.tags[0]' />
+          <button class="btn btn-green" onclick="extractPath()">Отримати</button>
+        </div>
+        <div class="path-result" id="pathResult">
+          <span style="color:var(--text3)">← Вкажи шлях до значення</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-title">cheat sheet — шляхи до даних</p>
+
+    <div class="cheat-grid">
+      <div class="cheat-card">
+        <h4>JavaScript / JSON Path</h4>
+        <div class="cheat-line">
+          <span class="cheat-code">data.name</span>
+          <span class="cheat-desc">Пряме поле об'єкта</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">data.user.email</span>
+          <span class="cheat-desc">Вкладений об'єкт</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">data.items[0]</span>
+          <span class="cheat-desc">Перший елемент масиву</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">data.items[0].id</span>
+          <span class="cheat-desc">Поле з першого елементу</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">data.items.length</span>
+          <span class="cheat-desc">Кількість елементів</span>
+        </div>
+      </div>
+      <div class="cheat-card">
+        <h4>Make.com / n8n шляхи</h4>
+        <div class="cheat-line">
+          <span class="cheat-code">{{data.name}}</span>
+          <span class="cheat-desc">Пряме поле (Make)</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">{{data.user.email}}</span>
+          <span class="cheat-desc">Вкладений (Make)</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">{{data.items[].id}}</span>
+          <span class="cheat-desc">Ітерація масиву (Make)</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">$json.name</span>
+          <span class="cheat-desc">n8n expression</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">$json.items[0].id</span>
+          <span class="cheat-desc">n8n — елемент масиву</span>
+        </div>
+      </div>
+      <div class="cheat-card">
+        <h4>JSON.parse / stringify</h4>
+        <div class="cheat-line">
+          <span class="cheat-code">JSON.parse(str)</span>
+          <span class="cheat-desc">Рядок → об'єкт</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">JSON.stringify(obj)</span>
+          <span class="cheat-desc">Об'єкт → рядок</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">JSON.stringify(obj,null,2)</span>
+          <span class="cheat-desc">З відступами (pretty)</span>
+        </div>
+      </div>
+      <div class="cheat-card">
+        <h4>Python json module</h4>
+        <div class="cheat-line">
+          <span class="cheat-code">json.loads(str)</span>
+          <span class="cheat-desc">Рядок → dict</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">json.dumps(obj)</span>
+          <span class="cheat-desc">Dict → рядок</span>
+        </div>
+        <div class="cheat-line">
+          <span class="cheat-code">data.get("key",def)</span>
+          <span class="cheat-desc">Безпечний доступ</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== TAB 4: REAL WORLD ===== -->
+  <div class="panel" id="tab-real">
+
+    <p class="section-title">реальні JSON з API</p>
+
+    <div class="example-tabs">
+      <button class="ex-tab active" onclick="switchEx('stripe', this)">Stripe Webhook</button>
+      <button class="ex-tab" onclick="switchEx('claude', this)">Claude API</button>
+      <button class="ex-tab" onclick="switchEx('gcal', this)">Google Calendar</button>
+      <button class="ex-tab" onclick="switchEx('github', this)">GitHub Webhook</button>
+    </div>
+
+    <div class="ex-panel active" id="ex-stripe">
+      <div class="highlight highlight-yellow">
+        <strong>Stripe → твій сервер:</strong> При успішній оплаті Stripe надсилає POST-запит з таким тілом. Потрібно витягти <code>data.object.amount</code> та <code>data.object.customer_email</code>.
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">Stripe — payment_intent.succeeded</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+        <pre><span class="json-bracket">{</span>
+  <span class="json-key">"id"</span><span class="json-colon">:</span> <span class="json-str">"evt_3PqR..."</span><span class="json-comma">,</span>
+  <span class="json-key">"type"</span><span class="json-colon">:</span> <span class="json-str">"payment_intent.succeeded"</span><span class="json-comma">,</span>
+  <span class="json-key">"created"</span><span class="json-colon">:</span> <span class="json-num">1748520000</span><span class="json-comma">,</span>
+  <span class="json-key">"data"</span><span class="json-colon">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"object"</span><span class="json-colon">:</span> <span class="json-bracket">{</span>
+      <span class="json-key">"id"</span><span class="json-colon">:</span> <span class="json-str">"pi_3Pq..."</span><span class="json-comma">,</span>
+      <span class="json-key">"amount"</span><span class="json-colon">:</span> <span class="json-num">4999</span><span class="json-comma">,</span>          <span class="code-comment">// cents → $49.99</span>
+      <span class="json-key">"currency"</span><span class="json-colon">:</span> <span class="json-str">"usd"</span><span class="json-comma">,</span>
+      <span class="json-key">"status"</span><span class="json-colon">:</span> <span class="json-str">"succeeded"</span><span class="json-comma">,</span>
+      <span class="json-key">"customer_email"</span><span class="json-colon">:</span> <span class="json-str">"user@example.com"</span>
+    <span class="json-bracket">}</span>
+  <span class="json-bracket">}</span>
+<span class="json-bracket">}</span></pre>
+      </div>
+      <div class="flow-row">
+        <div class="flow-box"><span class="dot dot-yellow"></span> event.type</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">event.data.object.amount</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box"><span class="dot dot-green"></span> / 100 = $49.99</div>
+      </div>
+    </div>
+
+    <div class="ex-panel" id="ex-claude">
+      <div class="highlight">
+        <strong>Claude API відповідь:</strong> Потрібно витягти текст — <code>content[0].text</code>. Також важливі: <code>usage.input_tokens</code> та <code>usage.output_tokens</code> для контролю витрат.
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">Claude API — /v1/messages response</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+        <pre><span class="json-bracket">{</span>
+  <span class="json-key">"id"</span><span class="json-colon">:</span> <span class="json-str">"msg_01XFD..."</span><span class="json-comma">,</span>
+  <span class="json-key">"type"</span><span class="json-colon">:</span> <span class="json-str">"message"</span><span class="json-comma">,</span>
+  <span class="json-key">"role"</span><span class="json-colon">:</span> <span class="json-str">"assistant"</span><span class="json-comma">,</span>
+  <span class="json-key">"content"</span><span class="json-colon">:</span> <span class="json-bracket">[</span>
+    <span class="json-bracket">{</span>
+      <span class="json-key">"type"</span><span class="json-colon">:</span> <span class="json-str">"text"</span><span class="json-comma">,</span>
+      <span class="json-key">"text"</span><span class="json-colon">:</span> <span class="json-str">"Привіт! Як можу допомогти?"</span>
+    <span class="json-bracket">}</span>
+  <span class="json-bracket">]</span><span class="json-comma">,</span>
+  <span class="json-key">"model"</span><span class="json-colon">:</span> <span class="json-str">"claude-sonnet-4-20250514"</span><span class="json-comma">,</span>
+  <span class="json-key">"stop_reason"</span><span class="json-colon">:</span> <span class="json-str">"end_turn"</span><span class="json-comma">,</span>
+  <span class="json-key">"usage"</span><span class="json-colon">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"input_tokens"</span><span class="json-colon">:</span> <span class="json-num">25</span><span class="json-comma">,</span>
+    <span class="json-key">"output_tokens"</span><span class="json-colon">:</span> <span class="json-num">12</span>
+  <span class="json-bracket">}</span>
+<span class="json-bracket">}</span></pre>
+      </div>
+      <div class="highlight highlight-green">
+        <strong>Зверни увагу:</strong> <code>content</code> — це масив. Тому текст: <code>response.content[0].text</code>, а не <code>response.content.text</code>.
+      </div>
+    </div>
+
+    <div class="ex-panel" id="ex-gcal">
+      <div class="highlight">
+        <strong>Google Calendar API:</strong> Відповідь при отриманні події. Критично: <code>start.dateTime</code> vs <code>start.date</code> — різниця між подіями з часом та цілоденними.
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">Google Calendar — event object</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+        <pre><span class="json-bracket">{</span>
+  <span class="json-key">"kind"</span><span class="json-colon">:</span> <span class="json-str">"calendar#event"</span><span class="json-comma">,</span>
+  <span class="json-key">"id"</span><span class="json-colon">:</span> <span class="json-str">"7qr8st..."</span><span class="json-comma">,</span>
+  <span class="json-key">"summary"</span><span class="json-colon">:</span> <span class="json-str">"Зустріч з командою"</span><span class="json-comma">,</span>
+  <span class="json-key">"start"</span><span class="json-colon">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"dateTime"</span><span class="json-colon">:</span> <span class="json-str">"2026-05-30T10:00:00+03:00"</span><span class="json-comma">,</span>
+    <span class="json-key">"timeZone"</span><span class="json-colon">:</span> <span class="json-str">"Europe/Kiev"</span>
+  <span class="json-bracket">}</span><span class="json-comma">,</span>
+  <span class="json-key">"end"</span><span class="json-colon">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"dateTime"</span><span class="json-colon">:</span> <span class="json-str">"2026-05-30T11:00:00+03:00"</span>
+  <span class="json-bracket">}</span><span class="json-comma">,</span>
+  <span class="json-key">"attendees"</span><span class="json-colon">:</span> <span class="json-bracket">[</span>
+    <span class="json-bracket">{</span> <span class="json-key">"email"</span><span class="json-colon">:</span> <span class="json-str">"you@gmail.com"</span><span class="json-comma">,</span> <span class="json-key">"responseStatus"</span><span class="json-colon">:</span> <span class="json-str">"accepted"</span> <span class="json-bracket">}</span>
+  <span class="json-bracket">]</span>
+<span class="json-bracket">}</span></pre>
+      </div>
+    </div>
+
+    <div class="ex-panel" id="ex-github">
+      <div class="highlight">
+        <strong>GitHub → webhook при push:</strong> Автоматизація — наприклад, при push до <code>main</code> відправляти повідомлення в Telegram. Витягуємо <code>pusher.name</code> та <code>commits[0].message</code>.
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">GitHub — push event</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+        <pre><span class="json-bracket">{</span>
+  <span class="json-key">"ref"</span><span class="json-colon">:</span> <span class="json-str">"refs/heads/main"</span><span class="json-comma">,</span>
+  <span class="json-key">"repository"</span><span class="json-colon">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"name"</span><span class="json-colon">:</span> <span class="json-str">"caio-track"</span><span class="json-comma">,</span>
+    <span class="json-key">"full_name"</span><span class="json-colon">:</span> <span class="json-str">"serge-zol/caio-track"</span>
+  <span class="json-bracket">}</span><span class="json-comma">,</span>
+  <span class="json-key">"pusher"</span><span class="json-colon">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"name"</span><span class="json-colon">:</span> <span class="json-str">"serge-zol"</span><span class="json-comma">,</span>
+    <span class="json-key">"email"</span><span class="json-colon">:</span> <span class="json-str">"serge@example.com"</span>
+  <span class="json-bracket">}</span><span class="json-comma">,</span>
+  <span class="json-key">"commits"</span><span class="json-colon">:</span> <span class="json-bracket">[</span>
+    <span class="json-bracket">{</span>
+      <span class="json-key">"id"</span><span class="json-colon">:</span> <span class="json-str">"a1b2c3..."</span><span class="json-comma">,</span>
+      <span class="json-key">"message"</span><span class="json-colon">:</span> <span class="json-str">"Add module 1.2"</span><span class="json-comma">,</span>
+      <span class="json-key">"added"</span><span class="json-colon">:</span> <span class="json-bracket">[</span><span class="json-str">"modules/1.2.html"</span><span class="json-bracket">]</span>
+    <span class="json-bracket">}</span>
+  <span class="json-bracket">]</span>
+<span class="json-bracket">}</span></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== TAB 5: QUIZ ===== -->
+  <div class="panel" id="tab-quiz">
+
+    <div class="quiz-score-bar">
+      <span class="score-display" id="quizScore">0/7</span>
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--text)">Тест — Крок 1.2</div>
+        <div class="score-label">JSON: структура, типи, парсинг</div>
+      </div>
+      <div style="margin-left:auto">
+        <button class="btn btn-ghost" onclick="resetQuiz()">↺ Скинути</button>
+      </div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="quiz-card" id="q1">
+      <div class="quiz-q"><span class="q-num">01 /</span> Яке з наступних значень є валідним JSON рядком (string)?</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, 'q1', false, 'A')"><span class="opt-letter">A</span> <code>'Привіт'</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q1', true, 'B')"><span class="opt-letter">B</span> <code>"Привіт"</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q1', false, 'C')"><span class="opt-letter">C</span> <code>Привіт</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q1', false, 'D')"><span class="opt-letter">D</span> <code>`Привіт`</code></div>
+      </div>
+      <div class="quiz-feedback" id="fb-q1"></div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="quiz-card" id="q2">
+      <div class="quiz-q"><span class="q-num">02 /</span> Як отримати перший елемент масиву <code>tags</code> в об'єкті <code>data</code>?</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, 'q2', false, 'A')"><span class="opt-letter">A</span> <code>data.tags.first</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q2', false, 'B')"><span class="opt-letter">B</span> <code>data.tags[1]</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q2', true, 'C')"><span class="opt-letter">C</span> <code>data.tags[0]</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q2', false, 'D')"><span class="opt-letter">D</span> <code>data["tags"].get(0)</code></div>
+      </div>
+      <div class="quiz-feedback" id="fb-q2"></div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="quiz-card" id="q3">
+      <div class="quiz-q"><span class="q-num">03 /</span> Яка функція JavaScript перетворює JSON-рядок у об'єкт?</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, 'q3', false, 'A')"><span class="opt-letter">A</span> <code>JSON.stringify()</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q3', true, 'B')"><span class="opt-letter">B</span> <code>JSON.parse()</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q3', false, 'C')"><span class="opt-letter">C</span> <code>JSON.decode()</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q3', false, 'D')"><span class="opt-letter">D</span> <code>JSON.convert()</code></div>
+      </div>
+      <div class="quiz-feedback" id="fb-q3"></div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="quiz-card" id="q4">
+      <div class="quiz-q"><span class="q-num">04 /</span> Що не є валідним у JSON синтаксисі?</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, 'q4', false, 'A')"><span class="opt-letter">A</span> <code>{"age": null}</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q4', true, 'B')"><span class="opt-letter">B</span> <code>{"name": 'Serge'}</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q4', false, 'C')"><span class="opt-letter">C</span> <code>{"active": false}</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q4', false, 'D')"><span class="opt-letter">D</span> <code>{"score": 3.14}</code></div>
+      </div>
+      <div class="quiz-feedback" id="fb-q4"></div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="quiz-card" id="q5">
+      <div class="quiz-q"><span class="q-num">05 /</span> Яка Python функція перетворює рядок у словник (dict)?</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, 'q5', false, 'A')"><span class="opt-letter">A</span> <code>json.dumps()</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q5', true, 'B')"><span class="opt-letter">B</span> <code>json.loads()</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q5', false, 'C')"><span class="opt-letter">C</span> <code>json.parse()</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q5', false, 'D')"><span class="opt-letter">D</span> <code>json.read()</code></div>
+      </div>
+      <div class="quiz-feedback" id="fb-q5"></div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="quiz-card" id="q6">
+      <div class="quiz-q"><span class="q-num">06 /</span> Де зберігається текст відповіді в Claude API? (структура: <code>response.content</code> — масив об'єктів)</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, 'q6', false, 'A')"><span class="opt-letter">A</span> <code>response.text</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q6', false, 'B')"><span class="opt-letter">B</span> <code>response.content.text</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q6', true, 'C')"><span class="opt-letter">C</span> <code>response.content[0].text</code></div>
+        <div class="quiz-opt" onclick="answer(this, 'q6', false, 'D')"><span class="opt-letter">D</span> <code>response.message</code></div>
+      </div>
+      <div class="quiz-feedback" id="fb-q6"></div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="quiz-card" id="q7">
+      <div class="quiz-q"><span class="q-num">07 /</span> Скільки типів даних підтримує JSON?</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, 'q7', false, 'A')"><span class="opt-letter">A</span> 4 (рядок, число, об'єкт, масив)</div>
+        <div class="quiz-opt" onclick="answer(this, 'q7', false, 'B')"><span class="opt-letter">B</span> 5 (+ boolean)</div>
+        <div class="quiz-opt" onclick="answer(this, 'q7', true, 'C')"><span class="opt-letter">C</span> 6 (+ null)</div>
+        <div class="quiz-opt" onclick="answer(this, 'q7', false, 'D')"><span class="opt-letter">D</span> 8 (є ще date та undefined)</div>
+      </div>
+      <div class="quiz-feedback" id="fb-q7"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      CAIO Track · <span>Крок 1.2</span> · Формат JSON: структура даних та парсинг
+    </div>
+    <div class="footer-right">
+      <a href="https://github.com/serge-zol/caio-track" target="_blank">github/caio-track</a>
+      <span>serge-zol · 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ===== TABS =====
+const visitedTabs = new Set(['theory']);
+
+function switchTab(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  el.classList.add('active');
+  visitedTabs.add(id);
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = 5;
+  const pct = Math.round((visitedTabs.size / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+// ===== EXAMPLES TABS =====
+function switchEx(id, el) {
+  document.querySelectorAll('.ex-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ex-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('ex-' + id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ===== COPY CODE =====
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = '✓ copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+// ===== JSON EXAMPLES =====
+const examples = {
+  basic: `{
+  "name": "Сергій",
+  "age": 32,
+  "active": true,
+  "score": null,
+  "skills": ["API", "JSON", "Make"],
+  "address": {
+    "city": "Київ",
+    "country": "UA"
+  }
+}`,
+  webhook: `{
+  "id": "evt_3PqR...",
+  "type": "payment_intent.succeeded",
+  "created": 1748520000,
+  "data": {
+    "object": {
+      "id": "pi_3Pq...",
+      "amount": 4999,
+      "currency": "usd",
+      "status": "succeeded",
+      "customer_email": "user@example.com"
+    }
+  }
+}`,
+  api: `{
+  "id": "msg_01XFD...",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "Привіт! Як можу допомогти?"
+    }
+  ],
+  "model": "claude-sonnet-4-20250514",
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 25,
+    "output_tokens": 12
+  }
+}`
+};
+
+function loadExample(key) {
+  document.getElementById('jsonInput').value = examples[key];
+  parseJSON();
+}
+
+// ===== PARSER =====
+let parsedData = null;
+let treeMode = true;
+
+function parseJSON() {
+  const input = document.getElementById('jsonInput').value.trim();
+  const status = document.getElementById('paneStatus') || document.getElementById('parseStatus');
+  const out = document.getElementById('treeOutput');
+
+  if (!input) {
+    setStatus('—', '');
+    out.innerHTML = '<span style="color:var(--text3);font-size:12px">Введи JSON...</span>';
+    return;
+  }
+
+  try {
+    parsedData = JSON.parse(input);
+    setStatus('✓ Valid', 'valid');
+    renderOutput();
+  } catch(e) {
+    parsedData = null;
+    setStatus('✗ Error', 'invalid');
+    out.innerHTML = `<span style="color:var(--red2);font-size:12px">SyntaxError: ${e.message}</span>`;
+  }
+}
+
+function setStatus(text, cls) {
+  const el = document.getElementById('parseStatus');
+  el.textContent = text;
+  el.className = 'pane-status ' + cls;
+}
+
+function formatJSON() {
+  const input = document.getElementById('jsonInput').value.trim();
+  try {
+    const parsed = JSON.parse(input);
+    document.getElementById('jsonInput').value = JSON.stringify(parsed, null, 2);
+    parseJSON();
+  } catch(e) {}
+}
+
+function toggleView() {
+  treeMode = !treeMode;
+  if (parsedData !== null) renderOutput();
+}
+
+function renderOutput() {
+  const out = document.getElementById('treeOutput');
+  if (treeMode) {
+    out.innerHTML = renderTree(parsedData, 'data', 0);
+  } else {
+    out.innerHTML = `<span style="color:var(--text2)">${JSON.stringify(parsedData, null, 2)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`;
+  }
+}
+
+function renderTree(val, key, depth) {
+  const indent = depth * 20;
+
+  if (val === null) {
+    return `<div class="tree-node" style="margin-left:${indent}px"><span class="tree-key">"${key}"</span><span style="color:var(--text3)">: </span><span class="tree-val-null">null</span></div>`;
+  }
+
+  if (typeof val === 'string') {
+    return `<div class="tree-node" style="margin-left:${indent}px"><span class="tree-key">"${key}"</span><span style="color:var(--text3)">: </span><span class="tree-val-str">"${escHtml(val)}"</span></div>`;
+  }
+
+  if (typeof val === 'number') {
+    return `<div class="tree-node" style="margin-left:${indent}px"><span class="tree-key">"${key}"</span><span style="color:var(--text3)">: </span><span class="tree-val-num">${val}</span></div>`;
+  }
+
+  if (typeof val === 'boolean') {
+    return `<div class="tree-node" style="margin-left:${indent}px"><span class="tree-key">"${key}"</span><span style="color:var(--text3)">: </span><span class="tree-val-bool">${val}</span></div>`;
+  }
+
+  if (Array.isArray(val)) {
+    const id = 'n' + Math.random().toString(36).slice(2);
+    const kids = val.map((v,i) => renderTree(v, i, 0)).join('');
+    return `<div class="tree-node" style="margin-left:${indent}px">
+      <span class="tree-expand" onclick="toggleNode('${id}')">▾</span>
+      <span class="tree-key">"${key}"</span><span style="color:var(--text3)">: </span><span class="tree-val-obj">[${val.length}]</span>
+      <div class="tree-children" id="${id}">${kids}</div>
+    </div>`;
+  }
+
+  if (typeof val === 'object') {
+    const id = 'n' + Math.random().toString(36).slice(2);
+    const kids = Object.entries(val).map(([k,v]) => renderTree(v, k, 0)).join('');
+    const label = depth === 0 ? 'root' : key;
+    return `<div class="tree-node" style="margin-left:${indent}px">
+      <span class="tree-expand" onclick="toggleNode('${id}')">▾</span>
+      <span class="tree-key">"${label}"</span><span style="color:var(--text3)">: </span><span class="tree-val-obj">{${Object.keys(val).length}}</span>
+      <div class="tree-children" id="${id}">${kids}</div>
+    </div>`;
+  }
+
+  return '';
+}
+
+function toggleNode(id) {
+  const el = document.getElementById(id);
+  const btn = el.previousElementSibling.previousElementSibling;
+  if (el.classList.contains('collapsed')) {
+    el.classList.remove('collapsed');
+    btn.textContent = '▾';
+  } else {
+    el.classList.add('collapsed');
+    btn.textContent = '▸';
+  }
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function extractPath() {
+  if (!parsedData) {
+    document.getElementById('pathResult').innerHTML = '<span style="color:var(--red2)">Спочатку парсни JSON</span>';
+    return;
+  }
+
+  const path = document.getElementById('pathInput').value.trim();
+  if (!path) return;
+
+  try {
+    // Safe path evaluation
+    const clean = path.replace(/^data\.?/, '');
+    let result = parsedData;
+    if (clean) {
+      const parts = clean.split(/[\.\[\]]+/).filter(Boolean);
+      for (const part of parts) {
+        if (result === null || result === undefined) break;
+        result = result[isNaN(part) ? part : parseInt(part)];
+      }
+    }
+
+    const res = document.getElementById('pathResult');
+    if (result === undefined) {
+      res.innerHTML = '<span style="color:var(--red2)">undefined — шлях не знайдено</span>';
+    } else if (result === null) {
+      res.innerHTML = '<span style="color:var(--red2)">null</span>';
+    } else if (typeof result === 'object') {
+      res.innerHTML = `<span style="color:var(--accent2)">${JSON.stringify(result)}</span>`;
+    } else {
+      res.innerHTML = `<span style="color:var(--green2)">${String(result)}</span> <span style="color:var(--text3);font-size:10px">(${typeof result})</span>`;
+    }
+  } catch(e) {
+    document.getElementById('pathResult').innerHTML = `<span style="color:var(--red2)">Помилка: ${e.message}</span>`;
+  }
+}
+
+// ===== QUIZ =====
+const quizState = {};
+const totalQ = 7;
+
+const feedback = {
+  q1: { ok: 'Правильно! У JSON рядки завжди в подвійних лапках. Одинарні лапки та бектіки — JS-синтаксис, не JSON.', fail: 'Ні. У JSON обов\'язкові подвійні лапки. Одинарні (\'...\') — тільки в JavaScript, не в JSON.' },
+  q2: { ok: 'Правильно! Масиви в JSON/JS нумеруються з нуля. Перший елемент — [0].', fail: 'Ні. Масиви нумеруються з 0. Перший елемент — data.tags[0], другий — data.tags[1].' },
+  q3: { ok: 'Правильно! JSON.parse() — рядок → об\'єкт. JSON.stringify() — навпаки: об\'єкт → рядок.', fail: 'Ні. JSON.parse() перетворює рядок у об\'єкт. JSON.stringify() робить зворотне.' },
+  q4: { ok: 'Правильно! Одинарні лапки для значень — невалідний JSON. Лише подвійні.', fail: 'Ні. Варіант B невалідний: одинарні лапки \'Serge\' не допускаються. Лише подвійні "Serge".' },
+  q5: { ok: 'Правильно! json.loads() — рядок → dict. json.dumps() — dict → рядок. "s" в кінці — "string".', fail: 'Ні. json.loads() парсить рядок у dict. json.dumps() серіалізує dict у рядок.' },
+  q6: { ok: 'Правильно! content — масив, тому потрібен індекс [0]. Потім .text для тексту.', fail: 'Ні. content — це масив об\'єктів. Потрібно: response.content[0].text.' },
+  q7: { ok: 'Правильно! 6 типів: string, number, boolean, null, object, array. Немає date, undefined, function.', fail: 'Ні. JSON підтримує рівно 6 типів: string, number, boolean, null, object, array. Date та undefined — JS-специфіка.' },
+};
+
+function answer(el, qid, correct, letter) {
+  if (quizState[qid]) return;
+  quizState[qid] = { correct, letter };
+
+  const card = document.getElementById(qid);
+  card.querySelectorAll('.quiz-opt').forEach(o => o.classList.add('answered'));
+  el.classList.add(correct ? 'correct' : 'wrong');
+
+  // Mark correct if wrong
+  if (!correct) {
+    const all = card.querySelectorAll('.quiz-opt');
+    // Find the correct one and mark it
+    // We can't easily identify it without data, so just show feedback
+  }
+
+  const fb = document.getElementById('fb-' + qid);
+  fb.textContent = correct ? '✓ ' + feedback[qid].ok : '✗ ' + feedback[qid].fail;
+  fb.className = 'quiz-feedback show ' + (correct ? 'ok' : 'fail');
+
+  updateQuizScore();
+}
+
+function updateQuizScore() {
+  const answered = Object.keys(quizState).length;
+  const correct = Object.values(quizState).filter(s => s.correct).length;
+  document.getElementById('quizScore').textContent = correct + '/' + totalQ;
+
+  if (answered === totalQ) {
+    visitedTabs.add('quiz-done');
+    updateProgress();
+  }
+}
+
+function resetQuiz() {
+  Object.keys(quizState).forEach(k => delete quizState[k]);
+  document.querySelectorAll('.quiz-opt').forEach(o => {
+    o.className = 'quiz-opt';
+  });
+  document.querySelectorAll('.quiz-feedback').forEach(f => {
+    f.className = 'quiz-feedback';
+  });
+  document.getElementById('quizScore').textContent = '0/' + totalQ;
+}
+
+// ===== AUTO-PARSE ON INPUT =====
+document.getElementById('jsonInput').addEventListener('input', () => {
+  clearTimeout(window._parseTimer);
+  window._parseTimer = setTimeout(parseJSON, 600);
+});
+
+// Init
+updateProgress();
+</script>
+</body>
+</html>
