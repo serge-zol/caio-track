@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.1 - API, endpoints та webhooks</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c10;
+  --bg2: #111520;
+  --bg3: #161b26;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.14);
+  --accent: #4f9eff;
+  --accent2: #7c6fff;
+  --green: #3ecf8e;
+  --amber: #f59e0b;
+  --red: #f87171;
+  --text: #e8eaf0;
+  --text2: #8b90a0;
+  --text3: #555b6e;
+  --mono: 'Space Mono', monospace;
+  --sans: 'Sora', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.7;min-height:100vh;overflow-x:hidden}
+
+/* grid bg */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(79,158,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(79,158,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+.wrap{max-width:860px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+/* header */
+header{padding:48px 0 32px;text-align:center}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin-bottom:16px}
+h1{font-size:clamp(28px,5vw,48px);font-weight:600;letter-spacing:-.02em;line-height:1.15;margin-bottom:12px}
+h1 span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:var(--text2);font-size:15px;font-weight:300;max-width:500px;margin:0 auto 32px}
+.progress-bar{height:2px;background:var(--border);border-radius:2px;margin-bottom:48px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s ease;width:20%}
+
+/* nav tabs */
+.tabs{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:32px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1;min-width:80px;padding:8px 12px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;text-align:center}
+.tab.active{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,.04)}
+
+/* panels */
+.panel{display:none;animation:fadeIn .25s ease}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:16px}
+.card-accent{border-color:rgba(79,158,255,.25);background:rgba(79,158,255,.04)}
+.card-green{border-color:rgba(62,207,142,.2);background:rgba(62,207,142,.04)}
+.card-amber{border-color:rgba(245,158,11,.2);background:rgba(245,158,11,.04)}
+
+.label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+h3{font-size:17px;font-weight:600;margin-bottom:10px;letter-spacing:-.01em}
+p{color:var(--text2);font-size:14px;margin-bottom:10px}
+p:last-child{margin-bottom:0}
+
+.analogy{border-left:2px solid var(--accent);padding:10px 14px;margin:12px 0;font-size:13px;color:rgba(79,158,255,.85);background:rgba(79,158,255,.06);border-radius:0 8px 8px 0;line-height:1.6}
+.analogy strong{color:var(--accent)}
+
+code{font-family:var(--mono);font-size:11px;background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;color:#a5d6ff}
+
+.code-block{font-family:var(--mono);font-size:12px;background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:16px;line-height:1.8;color:#e8eaf0;overflow-x:auto;margin:12px 0;white-space:pre}
+.code-block .k{color:#ff7b72}
+.code-block .s{color:#a5d6ff}
+.code-block .c{color:var(--text3)}
+.code-block .n{color:#ffa657}
+.code-block .v{color:#79c0ff}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:580px){.grid2{grid-template-columns:1fr}}
+
+/* method badges */
+.method{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.06em;margin-right:8px}
+.m-get{background:rgba(62,207,142,.15);color:var(--green);border:1px solid rgba(62,207,142,.3)}
+.m-post{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+.m-put{background:rgba(79,158,255,.15);color:var(--accent);border:1px solid rgba(79,158,255,.3)}
+.m-del{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+
+/* sim */
+.sim-area{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:14px;min-height:72px;margin:12px 0;font-family:var(--mono);font-size:12px}
+.sim-line{display:flex;align-items:flex-start;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);opacity:0;transition:opacity .3s}
+.sim-line:last-child{border-bottom:none}
+.sim-line.show{opacity:1}
+.sim-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0;background:var(--border2);transition:background .3s}
+.sim-dot.running{background:var(--amber);animation:blink .5s infinite}
+.sim-dot.done{background:var(--green)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.sim-title{color:var(--text);font-size:12px;font-weight:700;margin-bottom:2px}
+.sim-code{color:var(--text3);font-size:11px;word-break:break-all;line-height:1.5}
+.btn-run{font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:8px 16px;border-radius:6px;border:1px solid var(--accent);background:rgba(79,158,255,.08);color:var(--accent);cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn-run:hover{background:rgba(79,158,255,.18)}
+
+/* compare */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:580px){.compare-grid{grid-template-columns:1fr}}
+.comp-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px}
+.comp-card h4{font-size:14px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.bullet{font-size:13px;color:var(--text2);padding:4px 0 4px 14px;position:relative;line-height:1.5}
+.bullet::before{content:'—';position:absolute;left:0;color:var(--text3)}
+
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}
+.flow-badge{font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);color:var(--text2);background:var(--bg3)}
+.flow-arrow{color:var(--text3);font-size:11px;font-family:var(--mono)}
+
+/* quiz */
+.q-btn{width:100%;text-align:left;padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:var(--sans);font-size:13px;cursor:pointer;margin-bottom:8px;transition:all .2s;line-height:1.5}
+.q-btn:hover:not([data-done]){border-color:var(--border2);background:var(--bg2)}
+.q-btn[data-done="true"]{border-color:rgba(62,207,142,.4);background:rgba(62,207,142,.06);color:var(--green);cursor:default}
+.q-btn[data-done="false"]{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.06);color:var(--red);cursor:default}
+.q-result{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;margin-top:4px;font-size:13px;color:var(--text2);display:none}
+.q-result.show{display:block;animation:fadeIn .2s ease}
+
+/* score */
+.score-wrap{text-align:center;padding:24px;display:none}
+.score-wrap.show{display:block;animation:fadeIn .3s ease}
+.score-num{font-family:var(--mono);font-size:48px;color:var(--green);font-weight:700}
+.score-label{color:var(--text2);font-size:14px;margin-top:8px}
+
+/* footer */
+footer{text-align:center;padding:40px 0 32px;color:var(--text3);font-size:12px;font-family:var(--mono)}
+footer span{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Крок 1.1 — CAIO трек</div>
+    <h1>API · Endpoints<br><span>та Webhooks</span></h1>
+    <p class="subtitle">Як різні додатки спілкуються між собою в інтернеті</p>
+    <div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" onclick="show('api',0,this)">01 API</button>
+    <button class="tab" onclick="show('endpoint',1,this)">02 Endpoints</button>
+    <button class="tab" onclick="show('webhook',2,this)">03 Webhooks</button>
+    <button class="tab" onclick="show('compare',3,this)">04 Порівняння</button>
+    <button class="tab" onclick="show('quiz',4,this)">05 Перевірка</button>
+  </div>
+
+  <!-- 01 API -->
+  <div id="p-api" class="panel active">
+    <div class="card card-accent">
+      <div class="label">Концепція</div>
+      <h3>API — Application Programming Interface</h3>
+      <p>API — набір правил, за якими одна програма може звертатися до іншої. Ти надсилаєш розроблювачи апневлайгхік0', a:true, exp:'Вірно. Ти ініціюєш запит, сервер відповідає. API ℔ твій запит до зовнішньогп ресурс�.'},
+  {q:'Webhook — це теж API-запит, але ти сам його ініціюєш', a:false, exp:'Ні. Webhook ініціює сторонній сервіс, не ти. Ключова різниця — напрямок і ініціатор комунікації.'},
+  {q:'GET-запит використовують щоб отримати дані без змін', a:true, exp:'Вірно. GET — тільки читання. Нічого не створює і не змінює на сервері.'},
+  {q:'Для Telegram bot у реальному часі краще використовувати webhook', a:true, exp:'Вірно. Polling (постійні GET-запити кожні N секунд) — неефективний. Webhook від Telegram надсилає оновлення миттєво.'},
+  {q:'Endpoint і API — це одне й те саме', a:false, exp:'Ні. API — весь інтерфейс. Endpoint — одна конкретна URL/дія.'},
+];ser"</span>, <span class="s">"content"</span>: <span class="v">"Привіт"</span>}]
+}</div>
+      <p style="margin-top:8px">Відповідь прийде у JSON з полем <code>choices[0].message.content</code>.</p>
+    </div>
+  </div>
+
+  <!-- 02 Endpoints -->
+  <div id="p-endpoint" class="panel">
+    <div class="card card-accent">
+      <div class="label">Концепція</div>
+      <h3>Endpoint — конкретна точка входу в API</h3>
+      <p>Якщо API — це ресторан, то endpoint — конкретна страва в меню. Кожен endpoint — це <code>URL + HTTP-метод</code>, який виконує одну дію.</p>
+      <div class="analogy"><strong>Один сервер — десятки endpoints:</strong> отримати список, створити запис, оновити, видалити — це все різні endpoints одного API.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">HTTP методи</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+        <div style="display:flex;align-items:center"><span class="method m-get">GET</span><span style="font-size:13px;color:var(--text2)">Отримати дані — нічого не змінює</span></div>
+        <div style="display:flex;align-items:center"><span class="method m-post">POST</span><span style="font-size:13px;color:var(--text2)">Створити / надіслати дані</span></div>
+        <div style="display:flex;align-items:center"><span class="method m-put">PUT/PATCH</span><span style="font-size:13px;color:var(--text2)">Оновити існуючий запис</span></div>
+        <div style="display:flex;align-items:center"><span class="method m-del">DELETE</span><span style="font-size:13px;color:var(--text2)">Видалити запис</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">Telegram Bot API — endpoints</div>
+      <div class="code-block"><span class="m-get" style="display:inline;font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(62,207,142,.15);color:#3ecf8e">GET</span>  <span class="s">/getMe</span>          <span class="c">→ інфо про бота</span>
+<span class="m-get" style="display:inline;font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(62,207,142,.15);color:#3ecf8e">GET</span>  <span class="s">/getUpdates</span>      <span class="c">→ нові повідомлення</span>
+<span class="m-post" style="display:inline;font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(245,158,11,.15);color:#f59e0b">POST</span> <span class="s">/sendMessage</span>     <span class="c">→ надіслати текст</span>
+<span class="m-post" style="display:inline;font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(245,158,11,.15);color:#f59e0b">POST</span> <span class="s">/sendPhoto</span>       <span class="c">→ надіслати фото</span>
+<span class="m-del" style="display:inline;font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(248,113,113,.15);color:#f87171">DEL</span>  <span class="s">/deleteMessage</span>   <span class="c">→ видалити повідомлення</span></div>
+    </div>
+
+    <div class="card">
+      <div class="label">Симуляція запиту</div>
+      <div class="sim-area" id="ep-sim"><span style="color:var(--text3)">Натисни кнопку нижче</span></div>
+      <button class="btn-run" onclick="runSim('ep')">▶ Запустити GET /getMe</button>
+    </div>
+  </div>
+
+  <!-- 03 Webhooks -->
+  <div id="p-webhook" class="panel">
+    <div class="card card-green">
+      <div class="label">Концепція</div>
+      <h3>Webhook — "зворотній дзвінок" від сервера</h3>
+      <p>API — це ти питаєш сервер. Webhook — це сервер сам тебе сповіщає, коли щось сталося. Webhook — це URL на <em>твоєму</em> сервері, який зовнішній сервіс викликає автоматично.</p>
+      <div class="analogy"><strong>API:</strong> ти кожні 5 хв дзвониш у піцерію: "Ваша піца готова?" &nbsp;|&nbsp; <strong>Webhook:</strong> піцерія сама телефонує тобі коли готово.</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="label">Як налаштувати</div>
+        <div class="bullet">Реєструєш свій URL у сервісі</div>
+        <div class="bullet">Сервіс запам'ятовує його</div>
+        <div class="bullet">При події — шле POST на твій URL</div>
+        <div class="bullet">Твій сервер відповідає <code>200 OK</code></div>
+      </div>
+      <div class="card">
+        <div class="label">Типові джерела</div>
+        <div class="bullet">Stripe — платіж отримано</div>
+        <div class="bullet">GitHub — push до репозиторію</div>
+        <div class="bullet">Telegram — нове повідомлення боту</div>
+        <div class="bullet">Make/n8n — тригер зі сценарію</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">Приклад — webhook від Stripe</div>
+      <div class="code-block"><span class="k">POST</span> <span class="s">https://your-server.com/webhook/stripe</span>
+
+{
+  <span class="s">"type"</span>: <span class="v">"payment_intent.succeeded"</span>,
+  <span class="s">"data"</span>: {
+    <span class="s">"object"</span>: {
+      <span class="s">"id"</span>: <span class="v">"pi_3Qx..."</span>,
+      <span class="s">"amount"</span>: <span class="v">5000</span>,
+      <span class="s">"currency"</span>: <span class="v">"usd"</span>,
+      <span class="s">"status"</span>: <span class="v">"succeeded"</span>
+    }
+  }
+}</div>
+      <p style="margin-top:8px">Stripe надіслав це <strong>автоматично</strong> — ти нічого не питав.</p>
+    </div>
+
+    <div class="card">
+      <div class="label">Симуляція отримання webhook</div>
+      <div class="sim-area" id="wh-sim"><span style="color:var(--text3)">Натисни кнопку нижче</span></div>
+      <button class="btn-run" onclick="runSim('wh')">▶ Симулювати webhook від Stripe</button>
+    </div>
+  </div>
+
+  <!-- 04 Порівняння -->
+  <div id="p-compare" class="panel">
+    <div class="card">
+      <div class="label">Ключова різниця</div>
+      <h3>API vs Webhook</h3>
+      <p>Не взаємовиключні — часто використовуються разом. Різниця в тому, <em>хто ініціює комунікацію</em>.</p>
+    </div>
+
+    <div class="compare-grid">
+      <div class="comp-card" style="border-color:rgba(79,158,255,.2)">
+        <h4><span style="color:var(--accent)">→</span> API (ти → сервер)</h4>
+        <div class="bullet">Ти ініціюєш запит</div>
+        <div class="bullet">Отримуєш відповідь одразу</div>
+        <div class="bullet">Polling — треба постійно питати</div>
+        <div class="bullet">Підходить: пошук, отримання даних</div>
+      </div>
+      <div class="comp-card" style="border-color:rgba(62,207,142,.2)">
+        <h4><span style="color:var(--green)">←</span> Webhook (сервер → ти)</h4>
+        <div class="bullet">Сервер ініціює при події</div>
+        <div class="bullet">Real-time, без затримки</div>
+        <div class="bullet">Ефективніше — нема зайвих запитів</div>
+        <div class="bullet">Підходить: оплата, повідомлення, зміни</div>
+      </div>
+    </div>
+
+    <div class="card card-amber" style="margin-top:14px">
+      <div class="label">Реальний кейс — твій майбутній Крок 2.2</div>
+      <p>Gmail отримує лист → <strong>Webhook тригер</strong> сповіщає Make.com → Make.com через <strong>API</strong> надсилає повідомлення в Telegram.</p>
+      <div class="flow">
+        <div class="flow-badge">📧 Gmail</div>
+        <div class="flow-arrow">— webhook →</div>
+        <div class="flow-badge">⚙️ Make.com</div>
+        <div class="flow-arrow">— API →</div>
+        <div class="flow-badge">✈️ Telegram</div>
+      </div>
+      <p style="margin-top:8px;font-size:13px">Це типова архітектура автоматизації — webhook як тригер, API як виконавець дії.</p>
+    </div>
+  </div>
+
+  <!-- 05 Quiz -->
+  <div id="p-quiz" class="panel">
+    <div class="card">
+      <div class="label">Перевірка розуміння</div>
+      <h3>Вірно чи ні?</h3>
+      <p style="margin-bottom:16px">Натискай на кожне твердження.</p>
+      <div id="quiz-list"></div>
+    </div>
+    <div id="q-feedback" class="q-result"></div>
+    <div class="score-wrap" id="score-wrap">
+      <div class="score-num" id="score-num">5/5</div>
+      <div class="score-label">Крок 1.1 засвоєно ✓<br><span style="color:var(--text3)">Готовий до Кроку 1.2 — JSON</span></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="wrap">CAIO трек · Крок 1.1 · <span>API · Endpoints · Webhooks</span></div>
+</footer>
+
+<script>
+const TABS = ['api','endpoint','webhook','compare','quiz'];
+const PROG = [20,40,60,80,100];
+
+function show(id, idx, btn) {
+  TABS.forEach(t => document.getElementById('p-'+t).classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('prog').style.width = PROG[idx]+'%';
+}
+
+// Simulations
+const sims = {
+  ep: [
+    {t:'Надсилаємо запит...', c:'GET https://api.telegram.org/bot<TOKEN>/getMe'},
+    {t:'Сервер перевіряє токен...', c:'Авторизація OK, шукаємо бота...'},
+    {t:'Відповідь отримано ✓', c:'{"ok":true,"result":{"id":123456,"first_name":"MyBot","username":"my_test_bot"}}'},
+  ],
+  wh: [
+    {t:'Клієнт здійснив оплату в Stripe', c:'(ти нічого не питав — подія сталася)'},
+    {t:'Stripe надсилає POST на твій URL', c:'POST https://your-server.com/webhook {"type":"payment_intent.succeeded",...}'},
+    {t:'Твій сервер обробив webhook ✓', c:'Відповів 200 OK → видав доступ користувачу'},
+  ]
+};
+
+function runSim(type) {
+  const area = document.getElementById(type+'-sim');
+  area.innerHTML = '';
+  sims[type].forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'sim-line';
+    div.innerHTML = `<span class="sim-dot" id="${type}d${i}"></span><div><div class="sim-title">${s.t}</div><div class="sim-code">${s.c}</div></div>`;
+    area.appendChild(div);
+    setTimeout(() => {
+      div.classList.add('show');
+      const dot = document.getElementById(type+'d'+i);
+      dot.className = 'sim-dot running';
+      setTimeout(() => { dot.className = 'sim-dot done'; }, 700);
+    }, i * 1000);
+  });
+}
+
+// Quiz
+const questions = [
+  {q:'API — це коли твій код звертається до стороннього сервера', a:true, exp:'Вірно. Ти ініціюєш запит, сервер відповідає. API — твій запит до зовнішнього ресурсу.'},
+  {q:'Webhook — це теж API-запит, але ти сам його ініціюєш', a:false, exp:'Ні. Webhook ініціює сторонній сервіс, не ти. Ключова різниця — напрямок і ініціатор комунікації.'},
+  {q:'GET-запит використовують щоб отримати дані без змін', a:true, exp:'Вірно. GET — тільки читання. Нічого не створює і не змінює на сервері.'},
+  {q:'Для Telegram bot у реальному часі краще використовувати webhook', a:true, exp:'Вірно. Polling (постійні GET-запити кожні N секунд) — неефективний. Webhook від Telegram надсилає оновлення миттєво.'},
+  {q:'Endpoint і API — це одне й те саме', a:false, exp:'Ні. API — весь інтерфейс (усі правила і методи). Endpoint — одна конкретна URL/дія в цьому API.'},
+];
+
+let answered = 0;
+const list = document.getElementById('quiz-list');
+const feedback = document.getElementById('q-feedback');
+
+questions.forEach((q, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'q-btn';
+  btn.textContent = q.q;
+  btn.onclick = function() {
+    if (btn.dataset.done !== undefined) return;
+    btn.dataset.done = q.a ? 'true' : 'false';
+    feedback.textContent = (q.a ? '✓ ' : '✗ ') + q.exp;
+    feedback.className = 'q-result show';
+    answered++;
+    if (answered === questions.length) {
+      setTimeout(() => {
+        document.getElementById('score-wrap').classList.add('show');
+        feedback.style.display = 'none';
+      }, 800);
+    }
+  };
+  list.appendChild(btn);
+});
+</script>
+</body>
+</html>
